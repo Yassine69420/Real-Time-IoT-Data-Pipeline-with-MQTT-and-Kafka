@@ -1,0 +1,1 @@
+{"guid":"0-ZZZ12345678-54O","destination":"0-AAA12345678","region":"Dakhla-Oued Ed-Dahab","eventTime":"2025-04-01T20:37:41.659561Z","payload":{"format":"urn:exemple:capteur:temp","data":{"temperature":27.7}}}
