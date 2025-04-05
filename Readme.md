@@ -1,71 +1,193 @@
-# Real-Time IoT Data Pipeline
 
-## Overview
-This project simulates IoT sensor data, publishes it via MQTT (using Mosquitto), and consumes the messages in a test script. The pipeline can be extended to store data in a database and visualize it in Grafana.
+## Real-Time IoT Data Pipeline
 
-## Prerequisites
-Ensure you have the following installed:
-- **Python 3.10+** (Ensure `paho-mqtt` is installed)
-- **Mosquitto MQTT Broker**
-- **MQTT Client Tools** (optional for debugging)
+This project sets up a **real-time IoT data pipeline** that simulates fake IoT sensor data and streams it from an MQTT broker (Mosquitto) to Apache Kafka for scalable ingestion and processing.
 
-## Installation
-### 1. Install Required Python Packages
-```sh
-pip install paho-mqtt
+---
+
+## Project Components
+
+### 1. **IoT Data Simulator (`IotDataSim.py`)**
+
+Generates fake IoT sensor data (e.g., temperature, humidity, pressure, light, wind speed) and publishes it to an MQTT topic:  
+`iot/sensors`
+
+### 2. **MQTT Broker (Mosquitto)**
+
+Receives messages from the IoT simulator on the topic:  
+`iot/sensors`
+
+### 3. **MQTT → Kafka Bridge (`mqtt_to_kafka_bridge.py`)**
+
+Listens to the MQTT topic `iot/sensors` and forwards messages to the Kafka topic:  
+`iotSensors`
+
+### 4. **Apache Kafka**
+
+Collects the ingested data in the Kafka topic:  
+`iotSensors`
+
+---
+
+## How to Run the Project
+
+### Step 1: Prerequisites
+
+- **Python 3.10+**
+    
+- **Java 11+ (JDK)** installed and in PATH
+    
+- Kafka and Zookeeper installed and extracted to `C:\kafka`
+    
+- Install required Python packages:
+    
+    ```bash
+    pip install paho-mqtt confluent-kafka
+    ```
+    
+
+---
+
+### Step 2: Start Kafka and Zookeeper
+
+Open 2 separate terminals:
+
+1. **Zookeeper:**
+    
+    ```bash
+    cd C:\kafka\kafka_2.12-3.7.2
+    .\bin\windows\zookeeper-server-start.bat .\config\zookeeper.properties
+    ```
+    
+2. **Kafka Broker:**
+    
+    ```bash
+    cd C:\kafka\kafka_2.12-3.7.2
+    .\bin\windows\kafka-server-start.bat .\config\server.properties
+    ```
+    
+
+---
+
+### Step 3: Start Mosquitto MQTT Broker
+
+Run Mosquitto on the default port 1883:
+
+```bash
+mosquitto
 ```
 
-### 2. Install and Start Mosquitto (MQTT Broker)
-#### On Windows:
-1. Download Mosquitto from [here](https://mosquitto.org/download/).
-2. Install it and allow network access when prompted.
-3. Start Mosquitto from the command line:
-   ```sh
-   mosquitto -v
-   ```
+---
 
-#### On Linux (Ubuntu/Debian):
-```sh
-sudo apt update
-sudo apt install mosquitto mosquitto-clients
-sudo systemctl start mosquitto
+### Step 4: Create Kafka Topic
+
+Create the Kafka topic `iotSensors`:
+
+```bash
+cd C:\kafka\kafka_2.12-3.7.2
+.\bin\windows\kafka-topics.bat --create --topic iotSensors --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
 ```
 
-## Running the IoT Simulator
-The simulator generates sensor data and publishes it to the MQTT broker.
+---
 
-1. Open a terminal and navigate to the project directory:
-   ```sh
-   cd path/to/Real_Time_IoT_Data_Pipeline
-   ```
-2. Run the simulator script:
-   ```sh
-   python IotDataSim.py 10
-   ```
-   This will generate 10 sensor messages and publish them to MQTT.
+### Step 5: Start the MQTT → Kafka Bridge
 
-## Running the Test MQTT Subscriber
-To verify that the messages are being published correctly:
+Run the MQTT to Kafka bridge:
 
-1. Open another terminal.
-2. Navigate to the project directory and run:
-   ```sh
-   python MQtest.py
-   ```
-3. You should see output like:
-   ```json
-   Received message: {"guid": "0-ZZZ12345678-25D", "destination": "0-AAA12345678", "region": "Fès-Meknès", "eventTime": "2025-04-01T23:55:27.161088+00:00", "payload": {"format": "urn:example:sensor:temp", "data": {"temperature": 19.6}}}
-   ```
+```bash
+python mqtt_to_kafka_bridge.py
+```
 
-## Troubleshooting
-- **Mosquitto not found?** Ensure it's installed and running.
-- **Connection refused?** Run `mosquitto -v` and check if it's listening on port `1883`.
-- **Messages not received?** Ensure both `IotDataSim.py` and `MQtest.py` are using the same MQTT topic (`iot/sensors`).
+---
 
-## Next Steps
-- Store data in PostgreSQL/TimescaleDB.
-- Visualize real-time data in Grafana.
-- Extend the simulator with more sensors (e.g., humidity, pressure).
+### Step 6: Simulate Fake IoT Data
 
-Happy coding! 🚀
+Simulate and publish fake IoT data:
 
+```bash
+python IotDataSim.py 10
+```
+
+> This will generate and publish 10 JSON sensor messages to the `iot/sensors` MQTT topic. The generated data includes various sensor readings like temperature, humidity, pressure, light, and wind speed.
+
+---
+
+### Step 7: Verify Kafka Messages
+
+To consume and verify the messages in Kafka:
+
+```bash
+cd C:\kafka\kafka_2.12-3.7.2
+.\bin\windows\kafka-console-consumer.bat --bootstrap-server localhost:9092 --topic iotSensors --from-beginning
+```
+
+---
+
+## Topics
+
+|System|Topic Name|
+|---|---|
+|MQTT (Mosquitto)|`iot/sensors`|
+|Kafka|`iotSensors`|
+
+---
+
+## File Structure
+
+```
+your-project/
+├── IotDataSim.py            # IoT sensor data generator
+├── mqtt_to_kafka_bridge.py  # Bridge MQTT to Kafka
+├── MQtest.py                # A script to test the MQTT connection
+├── README.md
+```
+
+---
+
+## Notes
+
+- You can change the number of messages sent by modifying the command:  
+    `python IotDataSim.py 100`
+    
+- Ensure Kafka and Mosquitto are always running in the background.
+    
+- Data is in JSON format and includes region, temperature, humidity, pressure, light, wind speed, and timestamp.
+    
+
+---
+
+## Example Payload
+
+Here is an example of a generated JSON message that includes multiple sensor readings:
+
+```json
+{
+  "guid": "0-ZZZ12345678-12A",
+  "destination": "0-AAA12345678",
+  "region": "Casablanca-Settat",
+  "eventTime": "2025-04-05T17:48:23.123Z",
+  "payload": {
+    "format": "urn:example:sensor:multi-sensor",
+    "data": {
+      "temperature": 24.6,
+      "humidity": 65.2,
+      "pressure": 1013.4,
+      "light": 450.5,
+      "wind_speed": 5.3
+    }
+  }
+}
+```
+
+This payload includes the following sensor data:
+
+- **Temperature** (e.g., 24.6°C)
+    
+- **Humidity** (e.g., 65.2%)
+    
+- **Pressure** (e.g., 1013.4 hPa)
+    
+- **Light** (e.g., 450.5 lux)
+    
+- **Wind Speed** (e.g., 5.3 m/s)
+    

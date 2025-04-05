@@ -18,7 +18,7 @@ except Exception as e:
     print(f"[ERROR] Impossible de se connecter à MQTT Broker: {e}")
     sys.exit(1)
 
-# Generate JSON Data
+# Generate JSON Data with multiple sensor types
 def generate_data():
     region = random.choice([
         'Casablanca-Settat', 'Rabat-Salé-Kénitra', 'Tanger-Tétouan-Al Hoceïma',
@@ -26,17 +26,26 @@ def generate_data():
         'Souss-Massa', 'Drâa-Tafilalet', 'Laâyoune-Sakia El Hamra',
         'Guelmim-Oued Noun', 'Dakhla-Oued Ed-Dahab'
     ])
-    temperature = round(random.uniform(15, 30), 1)
+    temperature = round(random.uniform(15, 30), 1) #Temperature in Celcius
+    humidity = round(random.uniform(30, 80), 1)  # Humidity between 30% and 80%
+    pressure = round(random.uniform(900, 1100), 1)  # Pressure in hPa
+    light = round(random.uniform(0, 1000), 1)  # Light level in lux
+    wind_speed = round(random.uniform(0, 15), 1)  # Wind speed in m/s
 
     data = {
         "guid": f"0-ZZZ12345678-{random.randint(10, 99)}{random.choice('ABCDEFGHIJKLMNOPQRSTUVWXYZ')}",
         "destination": "0-AAA12345678",
         "region": region,
-        # ✅ Fix: Use timezone-aware UTC datetime
         "eventTime": datetime.datetime.now(datetime.UTC).isoformat(),
         "payload": {
-            "format": "urn:example:sensor:temp",
-            "data": {"temperature": temperature}
+            "format": "urn:example:sensor:multi-sensor",
+            "data": {
+                "temperature": temperature,
+                "humidity": humidity,
+                "pressure": pressure,
+                "light": light,
+                "wind_speed": wind_speed
+            }
         }
     }
     return json.dumps(data)
